@@ -13,7 +13,14 @@ from fastmcp import FastMCP
 from vast_ai_mcp.client import VastAIClient, VastAIError
 from vast_ai_mcp.config import load_local_env
 from vast_ai_mcp.history import HostHistoryStore
-from vast_ai_mcp.parsing import merge_filters, normalize_filters, parse_query_filters, pick_offer_value, sort_offers
+from vast_ai_mcp.parsing import (
+    merge_filters,
+    normalize_filters,
+    parse_query_filters,
+    pick_offer_value,
+    resolve_sort_candidates,
+    sort_offers,
+)
 from vast_ai_mcp.scheduler import ScheduleStore, ScheduleWorker, ScheduledAction
 
 load_local_env()
@@ -155,6 +162,10 @@ def trim_text(text: str, max_chars: int) -> tuple[str, bool]:
     return text[:max_chars].rstrip() + "\n...[truncated]", True
 
 
+def instance_state_key(details: dict[str, Any]) -> tuple[Any, Any]:
+    return (details.get("actual_status"), details.get("intended_status"))
+
+
 def score_observation(outcome: str) -> int:
     scores = {
         "success": 2,
@@ -213,6 +224,8 @@ def search_offers(
     if rentable is not None:
         final_filters["rentable"] = {"eq": rentable}
     final_filters["limit"] = max(1, min(limit, 200))
+    if "order" not in final_filters:
+        final_filters["order"] = [[resolve_sort_candidates(sort_by)[0], "desc" if descending else "asc"]]
 
     offers = get_client().search_offers(final_filters).get("offers", [])
     offers = sort_offers(offers, sort_by=sort_by, descending=descending)
@@ -320,7 +333,7 @@ def create_instance(
     args_str: str | None = None,
     target_state: Literal["running", "stopped"] | None = None,
     price: float | None = None,
-    cancel_unavail: bool | None = True,
+    cancel_unavail: bool | None = None,
     vm: bool | None = None,
 ) -> dict[str, Any]:
     """Create one instance from an offer using an image or an existing template hash."""
@@ -374,7 +387,8 @@ def create_instances_from_offers(
     args_str: str | None = None,
     target_state: Literal["running", "stopped"] | None = None,
     price: float | None = None,
-    cancel_unavail: bool | None = True,
+    cancel_unavail: bool | None = None,
+    vm: bool | None = None,
 ) -> dict[str, Any]:
     """Create multiple instances from explicit offer IDs without making selection decisions."""
     results: list[dict[str, Any]] = []
@@ -394,6 +408,7 @@ def create_instances_from_offers(
                 target_state=target_state,
                 price=price,
                 cancel_unavail=cancel_unavail,
+                vm=vm,
             )
         except Exception as exc:
             results.append({"offer_id": offer_id, "ok": False, "error": str(exc)})
@@ -493,24 +508,48 @@ def wait_for_instances(
 ) -> dict[str, Any]:
     """Poll instances until they reach a desired state or timeout."""
     desired = set(desired_statuses or ["running"])
+    started_at = time.time()
     deadline = time.time() + timeout_seconds
     snapshots: list[dict[str, Any]] = []
     final_instances: dict[int, dict[str, Any]] = {}
+    state_started_at: dict[int, float] = {}
+    last_state_by_instance: dict[int, tuple[Any, Any]] = {}
 
     while time.time() < deadline:
-        result = get_client().list_instances(
-            limit=min(max(len(instance_ids), 1), 25),
-            filters={"id": {"in": instance_ids}},
-            select_cols=DEFAULT_INSTANCE_COLUMNS + ["host_id", "cur_state", "next_state"],
-        )
-        listed_instances = result.get("instances", [])
+        now = time.time()
+        listed_instances: list[dict[str, Any]] = []
+        next_token: str | None = None
+        requested_ids = set(instance_ids)
+        while True:
+            result = get_client().list_instances(
+                limit=min(max(len(instance_ids), 1), 200),
+                filters={"id": {"in": instance_ids}},
+                select_cols=DEFAULT_INSTANCE_COLUMNS + ["host_id", "cur_state", "next_state"],
+                after_token=next_token,
+            )
+            listed_instances.extend(result.get("instances", []))
+            found_ids = {item.get("id") for item in listed_instances}
+            next_token = result.get("next_token")
+            if not next_token or requested_ids.issubset(found_ids):
+                break
+
         current: list[dict[str, Any]] = []
         all_ready = True
 
         found_by_id = {instance["id"]: instance for instance in listed_instances}
         for instance_id in instance_ids:
             details = found_by_id.get(instance_id, {"id": instance_id, "actual_status": None})
-            final_instances[instance_id] = details
+            state_key = instance_state_key(details)
+            if last_state_by_instance.get(instance_id) != state_key:
+                last_state_by_instance[instance_id] = state_key
+                state_started_at[instance_id] = now
+
+            current_state_duration_seconds = int(now - state_started_at[instance_id])
+            details_with_wait = dict(details)
+            details_with_wait["current_state_duration_seconds"] = current_state_duration_seconds
+            details_with_wait["wait_elapsed_seconds"] = int(now - started_at)
+
+            final_instances[instance_id] = details_with_wait
             actual_status = details.get("actual_status")
             current.append(
                 {
@@ -518,6 +557,7 @@ def wait_for_instances(
                     "actual_status": actual_status,
                     "intended_status": details.get("intended_status"),
                     "status_msg": details.get("status_msg"),
+                    "current_state_duration_seconds": current_state_duration_seconds,
                 }
             )
             if not instance_matches_desired_status(details, desired):
@@ -525,7 +565,7 @@ def wait_for_instances(
 
         snapshots.append(
             {
-                "elapsed_seconds": timeout_seconds - max(0, int(deadline - time.time())),
+                "elapsed_seconds": int(now - started_at),
                 "instances": current,
             }
         )
@@ -538,8 +578,7 @@ def wait_for_instances(
     logs: list[dict[str, Any]] = []
     if include_logs:
         for instance_id, details in final_instances.items():
-            actual_status = details.get("actual_status")
-            if actual_status in desired:
+            if instance_matches_desired_status(details, desired):
                 continue
             try:
                 excerpt = get_instance_logs(

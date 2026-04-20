@@ -35,7 +35,7 @@ class VastAIClient:
                     "Authorization": f"Bearer {self.api_key}",
                     "Accept": "application/json",
                     "Content-Type": "application/json",
-                    "User-Agent": "vast-ai-mcp/0.1.0",
+                    "User-Agent": "vast-ai-mcp/0.2.0",
                 }
             )
 
@@ -117,7 +117,7 @@ class VastAIClient:
         order_by: list[dict[str, str]] | None = None,
         after_token: str | None = None,
     ) -> dict[str, Any]:
-        params: dict[str, Any] = {"limit": max(1, min(limit, 25))}
+        params: dict[str, Any] = {"limit": max(1, min(limit, 200))}
         if filters:
             params["select_filters"] = json.dumps(filters)
         if select_cols:

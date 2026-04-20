@@ -1,0 +1,11 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "vast-ai": {
+      "type": "local",
+      "command": ["node", "./bin/vast-tst-mcp.js"],
+      "enabled": true,
+      "timeout": 120000
+    }
+  }
+}

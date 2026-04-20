@@ -91,8 +91,8 @@ def parse_query_filters(query: str) -> dict[str, dict[str, Any]]:
     return filters
 
 
-def merge_filters(*parts: dict[str, dict[str, Any]] | None) -> dict[str, dict[str, Any]]:
-    merged: dict[str, dict[str, Any]] = {}
+def merge_filters(*parts: dict[str, Any] | None) -> dict[str, Any]:
+    merged: dict[str, Any] = {}
     for part in parts:
         if not part:
             continue
@@ -101,15 +101,19 @@ def merge_filters(*parts: dict[str, dict[str, Any]] | None) -> dict[str, dict[st
     return merged
 
 
-def normalize_filters(filters: dict[str, dict[str, Any]] | None) -> dict[str, dict[str, Any]]:
+def normalize_filters(filters: dict[str, Any] | None) -> dict[str, Any]:
     if not filters:
         return {}
 
-    normalized: dict[str, dict[str, Any]] = {}
+    normalized: dict[str, Any] = {}
     for key, operations in filters.items():
-        normalized[key] = {}
-        for op, value in operations.items():
-            normalized[key][op] = _normalize_named_value(key, value)
+        if isinstance(operations, dict):
+            normalized[key] = {}
+            for op, value in operations.items():
+                normalized[key][op] = _normalize_named_value(key, value)
+            continue
+
+        normalized[key] = _normalize_named_value(key, operations)
     return normalized
 
 

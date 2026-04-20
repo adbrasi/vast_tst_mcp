@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "vast-ai": {
-      "command": "/absolute/path/to/vast_tst_mcp/.venv/bin/python",
-      "args": ["-m", "vast_ai_mcp"]
+      "command": "npx",
+      "args": ["-y", "github:adbrasi/vast_tst_mcp"]
     }
   }
 }

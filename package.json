@@ -1,0 +1,26 @@
+{
+  "name": "vast-tst-mcp",
+  "version": "0.2.0",
+  "private": false,
+  "type": "module",
+  "description": "Practical MCP launcher for Vast.ai instance search and lifecycle control.",
+  "license": "MIT",
+  "bin": {
+    "vast-tst-mcp": "./bin/vast-tst-mcp.js"
+  },
+  "files": [
+    "bin",
+    "docs",
+    "scripts",
+    "src",
+    "LICENSE",
+    "README.md",
+    ".env.example",
+    ".mcp.json",
+    "mcp-config.example.json",
+    "pyproject.toml"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}

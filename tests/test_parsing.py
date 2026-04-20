@@ -26,6 +26,11 @@ def test_normalize_filters_converts_gpu_name_underscores():
     assert normalized == {"gpu_name": {"eq": "RTX 5090"}}
 
 
+def test_normalize_filters_allows_raw_order_payload():
+    normalized = normalize_filters({"order": [["dph_total", "asc"]]})
+    assert normalized == {"order": [["dph_total", "asc"]]}
+
+
 def test_sort_offers_price_and_dlperf():
     offers = [
         {"id": 1, "dph_total": 1.3, "dlperf": 10.2},

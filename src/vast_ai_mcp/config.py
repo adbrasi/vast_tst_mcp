@@ -14,6 +14,7 @@ def load_local_env() -> Path | None:
         Path(__file__).resolve().parents[2] / ".env",
     ]
 
+    loaded_any: Path | None = None
     for candidate in candidates:
         if not candidate.exists():
             continue
@@ -28,6 +29,6 @@ def load_local_env() -> Path | None:
             os.environ.setdefault(key, value)
 
         LOGGER.info("Loaded environment variables from %s", candidate)
-        return candidate
+        loaded_any = candidate
 
-    return None
+    return loaded_any

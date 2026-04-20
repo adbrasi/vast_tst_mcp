@@ -42,37 +42,51 @@ Relevant official docs used while building this server:
 
 Client integration patterns are documented in [docs/clients.md](docs/clients.md).
 
-## Install
+## Quick start
+
+```bash
+npx -y github:adbrasi/vast_tst_mcp --check-config
+```
+
+This is now the recommended path. The launcher creates a local cached Python runtime for the MCP automatically on first run.
+
+Set your token before starting the MCP:
+
+```bash
+export VAST_API_KEY="your_vast_api_key_here"
+```
+
+You can also use `uvx` if you prefer the Python-native route:
+
+```bash
+uvx --from git+https://github.com/adbrasi/vast_tst_mcp vast-ai-mcp --check-config
+```
+
+## Repo-local development install
+
+If you want the repository checked out locally for development:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
-```
-
-Configure environment variables:
-
-```bash
 cp .env.example .env
 ```
 
 At minimum, set `VAST_API_KEY`.
 
-The server auto-loads `.env` from the repo root or current working directory, so the normal setup can be:
-
-1. put the token in `.env`
-2. point your MCP client to `python -m vast_ai_mcp`
-3. use it
+The server auto-loads `.env` from the repo root or current working directory.
 
 Quick config check:
 
 ```bash
-.venv/bin/python -m vast_ai_mcp --check-config
+npx -y github:adbrasi/vast_tst_mcp --check-config
 ```
 
-Or use the bootstrap runner:
+If you are running from a local checkout, these also work:
 
 ```bash
+node ./bin/vast-tst-mcp.js --check-config
 ./scripts/run_mcp.sh --check-config
 ```
 
@@ -82,19 +96,23 @@ Example config is in [mcp-config.example.json](mcp-config.example.json).
 
 For client-specific setup for Claude Code, Codex, and OpenCode, see [docs/clients.md](docs/clients.md).
 
-The important part is pointing the MCP client at:
+The shortest portable launcher is:
 
 ```json
 {
-  "command": "/absolute/path/to/vast_tst_mcp/.venv/bin/python",
-  "args": ["-m", "vast_ai_mcp"]
+  "command": "npx",
+  "args": ["-y", "github:adbrasi/vast_tst_mcp"]
 }
 ```
 
-If your MCP client launches the process from outside the repo, either:
+If you prefer a local checkout, use:
 
-- set `cwd` to the repo root if your client supports it
-- or pass `VAST_API_KEY` explicitly in the client config
+```json
+{
+  "command": "node",
+  "args": ["/absolute/path/to/vast_tst_mcp/bin/vast-tst-mcp.js"]
+}
+```
 
 ## Tools
 
@@ -169,6 +187,8 @@ The MCP now retries both the Vast.ai request and the S3 log download because the
 Simple polling helper. It does not decide anything. It only waits until the given instances reach a desired status or timeout, and can optionally attach short logs for instances that did not reach the target.
 
 It uses a single `list_instances` call per polling cycle for the whole batch to reduce `429` rate limits.
+
+Each snapshot now includes `current_state_duration_seconds`, so an agent can reason about cases like "this instance has been loading for 95 seconds already".
 
 ### `instance_action`
 

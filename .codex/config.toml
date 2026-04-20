@@ -1,0 +1,6 @@
+[mcp_servers.vast-ai]
+command = "node"
+args = ["./bin/vast-tst-mcp.js"]
+cwd = "."
+startup_timeout_sec = 120
+tool_timeout_sec = 120
