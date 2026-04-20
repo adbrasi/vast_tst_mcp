@@ -40,7 +40,7 @@ Relevant official docs used while building this server:
 - `PUT /api/v0/instances/request_logs/{id}` for logs
 - `GET /api/v0/template/` for template search
 
-Client integration patterns are documented in [docs/clients.md](/home/adolfocesar/projects/vast_ai_bot/docs/clients.md).
+Client integration patterns are documented in [docs/clients.md](docs/clients.md).
 
 ## Install
 
@@ -78,15 +78,15 @@ Or use the bootstrap runner:
 
 ## MCP client config
 
-Example config is in [mcp-config.example.json](/home/adolfocesar/projects/vast_ai_bot/mcp-config.example.json).
+Example config is in [mcp-config.example.json](mcp-config.example.json).
 
-For client-specific setup for Claude Code, Codex, and OpenCode, see [docs/clients.md](/home/adolfocesar/projects/vast_ai_bot/docs/clients.md).
+For client-specific setup for Claude Code, Codex, and OpenCode, see [docs/clients.md](docs/clients.md).
 
 The important part is pointing the MCP client at:
 
 ```json
 {
-  "command": "/absolute/path/to/vast_ai_bot/.venv/bin/python",
+  "command": "/absolute/path/to/vast_tst_mcp/.venv/bin/python",
   "args": ["-m", "vast_ai_mcp"]
 }
 ```

@@ -46,8 +46,8 @@ Example:
 ```toml
 [mcp_servers.vast-ai]
 command = "bash"
-args = ["/absolute/path/to/vast_ai_bot/scripts/run_mcp.sh"]
-cwd = "/absolute/path/to/vast_ai_bot"
+args = ["/absolute/path/to/vast_tst_mcp/scripts/run_mcp.sh"]
+cwd = "/absolute/path/to/vast_tst_mcp"
 startup_timeout_sec = 20
 tool_timeout_sec = 120
 
@@ -67,7 +67,7 @@ Example `opencode.jsonc`:
   "mcp": {
     "vast-ai": {
       "type": "local",
-      "command": ["bash", "/absolute/path/to/vast_ai_bot/scripts/run_mcp.sh"],
+      "command": ["bash", "/absolute/path/to/vast_tst_mcp/scripts/run_mcp.sh"],
       "enabled": true,
       "environment": {
         "VAST_API_KEY": "your_vast_api_key_here"
