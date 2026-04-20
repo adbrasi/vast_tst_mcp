@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vast-ai-mcp"
+version = "0.1.0"
+description = "A practical MCP server for Vast.ai instance search and lifecycle control."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "OpenAI Codex" }
+]
+dependencies = [
+  "fastmcp>=3.2.4,<4",
+  "requests>=2.32.0,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.0,<9",
+]
+
+[project.scripts]
+vast-ai-mcp = "vast_ai_mcp.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vast_ai_mcp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

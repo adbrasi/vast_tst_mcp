@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "vast-ai": {
+      "command": "bash",
+      "args": ["./scripts/run_mcp.sh"],
+      "env": {
+        "VAST_API_KEY": "${VAST_API_KEY}"
+      }
+    }
+  }
+}

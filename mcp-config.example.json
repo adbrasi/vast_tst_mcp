@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "vast-ai": {
+      "command": "/absolute/path/to/vast_ai_bot/.venv/bin/python",
+      "args": ["-m", "vast_ai_mcp"]
+    }
+  }
+}
